@@ -1,0 +1,23 @@
+@startuml
+
+package "UI Layer" {
+  class UserController
+  class ProductController
+}
+
+package "Service Layer" {
+  class UserService
+  class ProductService
+}
+
+package "Data Layer" {
+  class UserRepository
+  class ProductRepository
+}
+
+UserController --> UserService : calls
+ProductController --> ProductService : calls
+UserService --> UserRepository : calls
+ProductService --> ProductRepository : calls
+
+@enduml

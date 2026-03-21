@@ -1,0 +1,57 @@
+@startuml
+
+package "API Layer" {
+  class RestController
+  class GraphQLResolver
+}
+
+package "Presentation Layer" {
+  class UserPresenter
+  class ProductPresenter
+  class OrderPresenter
+}
+
+package "Business Logic Layer" {
+  class UserService
+  class ProductService
+  class OrderService
+  class PaymentService
+}
+
+package "Data Access Layer" {
+  class UserRepository
+  class ProductRepository
+  class OrderRepository
+  class PaymentRepository
+}
+
+package "External Services" {
+  class EmailService
+  class NotificationService
+}
+
+RestController --> UserPresenter : calls
+RestController --> ProductPresenter : calls
+RestController --> OrderPresenter : calls
+
+GraphQLResolver --> UserPresenter : calls
+GraphQLResolver --> ProductPresenter : calls
+GraphQLResolver --> OrderPresenter : calls
+
+UserPresenter --> UserService : calls
+ProductPresenter --> ProductService : calls
+OrderPresenter --> OrderService : calls
+
+UserService --> UserRepository : calls
+UserService --> EmailService : calls
+
+ProductService --> ProductRepository : calls
+
+OrderService --> OrderRepository : calls
+OrderService --> PaymentService : calls
+OrderService --> NotificationService : calls
+
+PaymentService --> PaymentRepository : calls
+PaymentService --> EmailService : calls
+
+@enduml
