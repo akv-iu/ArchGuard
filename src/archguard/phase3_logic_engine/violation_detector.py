@@ -26,14 +26,11 @@ class ViolationDetector:
         logger.info("Detecting violations...")
         checker = ConstraintChecker(architecture_graph, code_graph)
 
-        # Find direct violations
         direct_violations = checker.find_violations()
-
-        # Find transitive violations
         transitive_violations = checker.find_transitive_violations()
+        circular_violations = checker.find_circular_violations()
 
-        # Combine all violations
-        all_violations = direct_violations | transitive_violations
+        all_violations = direct_violations | transitive_violations | circular_violations
 
         logger.info(f"Detected {len(all_violations)} total violations")
         return all_violations
@@ -54,7 +51,7 @@ class ViolationDetector:
             "critical": [],
             "high": [],
             "medium": [],
-            "low": []
+            "low": [],
         }
 
         for violation in violations:
@@ -65,7 +62,7 @@ class ViolationDetector:
                 classification["transitive"].append(violation)
 
             # Classify by severity
-            if violation.severity == "high":
+            if violation.severity == "critical":
                 classification["critical"].append(violation)
             elif violation.severity == "high":
                 classification["high"].append(violation)
@@ -75,4 +72,3 @@ class ViolationDetector:
                 classification["low"].append(violation)
 
         return classification
-

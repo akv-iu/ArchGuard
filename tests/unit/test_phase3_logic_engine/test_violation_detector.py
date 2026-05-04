@@ -99,16 +99,36 @@ class TestViolationDetector:
         """Test classifying violations by severity."""
         from archguard.phase3_logic_engine.models import Violation
 
+        v_critical = Violation("CIRCULAR_DEPENDENCY", "A", "A", severity="critical")
         v_high = Violation("DIRECT_VIOLATION", "A", "B", severity="high")
         v_medium = Violation("TRANSITIVE_VIOLATION", "C", "D", severity="medium")
         v_low = Violation("TRANSITIVE_VIOLATION", "E", "F", severity="low")
 
-        violations = {v_high, v_medium, v_low}
+        violations = {v_critical, v_high, v_medium, v_low}
         classification = ViolationDetector.classify_violations(violations)
 
-        assert len(classification["critical"]) >= 1
+        assert len(classification["critical"]) == 1
+        assert len(classification["high"]) == 1
         assert len(classification["medium"]) == 1
         assert len(classification["low"]) == 1
+
+    def test_detect_circular_violations(self):
+        """Test that circular dependencies in code are detected."""
+        arch_graph = ArchitectureGraph()
+        arch_graph.add_class(ArchitectureClass("A", "layer1"))
+        arch_graph.add_class(ArchitectureClass("B", "layer2"))
+
+        code_graph = ImplementationGraph()
+        code_graph.add_class(ClassDefinition("A", "a.py", 1))
+        code_graph.add_class(ClassDefinition("B", "b.py", 1))
+        code_graph.add_call(MethodCall(source_class="A", target_class="B", source_method="m1", target_method="m2"))
+        code_graph.add_call(MethodCall(source_class="B", target_class="A", source_method="m2", target_method="m1"))
+
+        violations = ViolationDetector.detect(arch_graph, code_graph)
+
+        circular = [v for v in violations if v.type == "CIRCULAR_DEPENDENCY"]
+        assert len(circular) > 0
+        assert all(v.severity == "critical" for v in circular)
 
     def test_detect_multiple_violations_complex(self):
         """Test detecting multiple violations in complex graph."""

@@ -1,526 +1,210 @@
-# 🏗️ ArchGuard: Neuro-Symbolic Referee for Architectural Drift Detection
+# ArchGuard
 
-## Project Vision
+ArchGuard is a course project prototype for detecting architectural drift in Python code. It represents an intended architecture as a directed graph, extracts implementation-level dependencies from Python source code, and compares the two graphs to identify calls that violate the architecture specification.
 
-ArchGuard is an intelligent, interpretable system that detects and explains **architectural drift** in AI-generated code. It combines symbolic reasoning with neural language models to bridge the gap between static architectural specifications and runtime code implementations. Rather than simply flagging violations, ArchGuard generates natural language explanations and actionable code fixes for developers.
+The project is framed as a neuro-symbolic system, but the current repository is mostly the symbolic portion of that system. Phase 4 contains placeholder modules for LLM-based explanation generation and is not yet a working Gemini integration.
 
-This graduate-level implementation combines graph theory, abstract syntax tree analysis, constraint satisfaction, and large language models into a unified pipeline that acts as a rigorous, yet empathetic code referee.
+## Current Status
 
----
+Implemented or partially implemented:
 
-## The Neuro-Symbolic Architecture
+- Phase 1: PlantUML architecture parsing.
+- Phase 1: Architecture graph construction with NetworkX.
+- Phase 2: Python source parsing using Python's built-in `ast` module.
+- Phase 2: Extraction of classes, methods, method calls, and implementation dependency graphs.
+- Phase 3: Deterministic constraint checking between architecture and implementation graphs.
+- Phase 3: Direct, transitive, and circular violation models.
+- Phase 3: JSON-like and human-readable trace/report generation utilities.
+- Phase 4: Data models and placeholder classes for prompts, Gemini calls, and explanation formatting.
 
-ArchGuard implements a four-phase deterministic pipeline that transforms architectural rules into developer-friendly guidance:
+Not currently implemented:
 
-### **Phase 1: Symbolic Brain** 🧠
-*Parse Architecture → Build Rule Base*
+- A working end-to-end `ArchGuard` facade in `src/archguard/core.py`.
+- A packaged command-line command such as `archguard analyze`.
+- Real Gemini API calls.
+- Real prompt generation or response parsing for Phase 4.
+- Multi-language parsing beyond Python.
+- Production-scale evaluation on large repositories.
+- A complete example application in the `examples/` directory.
 
-The symbolic brain reads a PlantUML architecture specification and converts it into a formal, queryable graph representation:
+## Repository Layout
 
-- **Input**: PlantUML text file defining system layers, classes, and allowed dependencies
-- **Processing**:
-  - Parse PlantUML syntax to extract architectural components
-  - Identify layers, classes, and their relationships
-  - Define allowed dependency pathways
-- **Output**: NetworkX directed graph representing the absolute source of truth for architectural rules
-- **Key Insight**: Architecture becomes data—a graph where edges represent permitted call chains
-
-### **Phase 2: Code Abstraction** 📝
-*Source Code → Extract Implementation Facts*
-
-The code abstraction layer uses Tree-Sitter to parse actual source code and extract only the architectural facts:
-
-- **Input**: Python or Java source code (or entire repositories)
-- **Processing**:
-  - Parse source code using Tree-Sitter AST
-  - Walk the AST to extract class definitions
-  - Identify all explicit method-to-method calls
-  - Track call sites with full source location information
-- **Output**: NetworkX directed graph representing what the code actually does
-- **Key Insight**: Implementation becomes data—another graph capturing real call relationships
-
-### **Phase 3: Logic Engine** ⚙️
-*Compare & Detect Violations*
-
-The logic engine is a deterministic constraint satisfaction algorithm that serves as the referee:
-
-- **Input**: Architecture graph (Phase 1) + Implementation graph (Phase 2)
-- **Processing**:
-  - Traverse every edge in the implementation graph
-  - Check if each call is allowed by the architecture graph
-  - For violations, generate a detailed call trace showing the violation path
-  - Categorize violation types (direct, transitive, etc.)
-- **Output**: Structured JSON violation traces with full context
-- **Key Insight**: Violations are not vague—each includes the exact call chain that breaks the rules
-
-### **Phase 4: Neuro-Symbolic Handoff** 🤖
-*JSON Violations → Natural Language Explanations*
-
-The final phase sends rigorous logical errors to Google Gemini for human-friendly translation:
-
-- **Input**: JSON violation traces from Phase 3
-- **Processing**:
-  - Convert each violation into a detailed prompt for the LLM
-  - Include architectural rules, violation details, and code context
-  - Query Google Gemini API for natural language explanations
-  - Extract LLM-generated code fix suggestions
-- **Output**: Natural language explanations + suggested code fixes
-- **Key Insight**: Logic guides the explanation—the LLM interprets, not decides
-
----
-
-## The Problem This Solves
-
-AI systems like ChatGPT and Claude can generate code that works, but often violates intended architectural patterns. A system following a layered architecture might generate a view layer that directly accesses the database, a service that bypasses its facade, or circular dependencies that shouldn't exist. Traditional linters catch syntax errors; ArchGuard catches *semantic* architectural errors.
-
-ArchGuard provides:
-- **Automated drift detection** without manual code review
-- **Explainability** through natural language descriptions
-- **Actionability** through concrete code fix suggestions
-- **Rigor** through deterministic symbolic logic
-- **Flexibility** through integrated AI interpretation
-
----
-
-## Tech Stack
-
-| Component | Technology | Why |
-|-----------|-----------|-----|
-| **Language** | Python 3.10+ | Mature ecosystem, excellent for AST manipulation |
-| **Graph Engine** | NetworkX | Standard for architectural graph modeling |
-| **Code Parsing** | Tree-Sitter | Language-agnostic, incremental parsing, robust AST |
-| **AI/LLM** | Google Generative AI (Gemini) | State-of-art models, accessible API, no local infra |
-| **Testing** | Pytest | Industry standard, excellent fixture/parametrization support |
-| **Build/Package** | setuptools + wheels | Standard Python packaging approach |
-
----
-
-## Key Features
-
-✅ **Architectural Specification Language**: Parse rich PlantUML architecture diagrams
-✅ **Multi-Language Support**: Extract facts from Python code (Java planned for Phase 2)
-✅ **Deterministic Validation**: Constraint satisfaction engine guarantees consistent results
-✅ **Violation Tracing**: Every violation includes the complete call chain that caused it
-✅ **LLM Integration**: Google Gemini transforms logical errors into explanations
-✅ **Modular Design**: Each phase is independently testable and extensible
-✅ **Production Ready**: Type hints, comprehensive testing, clean architecture
-
----
-
-## Project Structure
-
-```
+```text
 ArchGuard/
-├── src/archguard/              # Main source package
-│   ├── phase1_symbolic_brain/  # Architecture parsing and rule base
-│   ├── phase2_code_abstraction/# Code extraction and implementation graph
-│   ├── phase3_logic_engine/    # Violation detection and tracing
-│   ├── phase4_neuro_symbolic/  # LLM integration for explanations
-│   ├── common/                 # Shared utilities and exceptions
-│   └── core.py                 # Main orchestrator facade
-├── tests/                      # Comprehensive test suite
-│   ├── unit/                   # Unit tests for each phase
-│   ├── integration/            # Cross-phase integration tests
-│   ├── e2e/                    # End-to-end pipeline tests
-│   └── fixtures/               # Test data and sample files
-├── docs/                       # Documentation
-└── examples/                   # Example architectures and code
+  src/archguard/
+    common/
+      Shared exceptions, constants, logging, and graph helpers.
+    phase1_symbolic_brain/
+      PlantUML parsing, architecture models, and architecture graph builder.
+    phase2_code_abstraction/
+      Python AST parsing, code fact extraction, and implementation graph builder.
+    phase3_logic_engine/
+      Constraint checking, violation detection, trace generation, and reports.
+    phase4_neuro_symbolic/
+      Placeholder Gemini client, prompt generator, explanation formatter, and models.
+    core.py
+      Intended top-level orchestrator, currently mostly placeholder code.
+  tests/
+    unit/
+      Unit tests for phases 1, 2, and 3.
+    integration/
+      End-to-end tests for the implemented phase-level pipelines.
+    fixtures/
+      Sample PlantUML architectures and Python source files.
 ```
-
----
 
 ## Installation
 
-### Prerequisites
-- Python 3.10 or higher
-- pip or uv package manager
-- Git
+Requirements:
 
-### Quick Start
+- Python 3.10 or newer.
+- `pip`.
+
+Set up the project:
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd ArchGuard
-
-# Create virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install package in development mode
+venv\Scripts\activate
 pip install -e ".[dev]"
-
-# Run tests to verify installation
-pytest tests/ -v
 ```
 
-### Dependencies
+On macOS or Linux, activate the virtual environment with:
 
-Core dependencies:
-- `networkx>=3.0` - Graph algorithms and structures
-- `tree-sitter>=0.20` - AST parsing
-- `google-generativeai>=0.3.0` - Gemini LLM integration
-
-Development dependencies:
-- `pytest>=7.0` - Testing framework
-- `pytest-cov` - Coverage reporting
-- `mypy` - Static type checking
-- `pylint` - Code linting
-- `black` - Code formatting
-
----
-
-## Usage
-
-### Basic Pipeline
-
-```python
-from archguard.core import ArchGuard
-
-# Initialize the referee
-referee = ArchGuard()
-
-# Load architecture specification
-architecture_path = "examples/sample_architecture.puml"
-referee.load_architecture(architecture_path)
-
-# Analyze source code
-code_path = "examples/sample_code.py"
-violations, explanations = referee.analyze(code_path)
-
-# Get results
-for violation in violations:
-    print(f"Violation: {violation.type}")
-    print(f"From: {violation.source_class}")
-    print(f"To: {violation.target_class}")
-    print(f"Explanation: {violation.explanation}")
-    print(f"Suggested Fix: {violation.suggested_fix}")
+```bash
+source venv/bin/activate
 ```
 
-### Individual Phases
+## Running Tests
+
+Run the test suite:
+
+```bash
+pytest -q
+```
+
+Latest local test run:
+
+```text
+Command: .\venv\Scripts\python.exe -m pytest -q
+Environment: Windows, Python 3.13.7, pytest 9.0.2
+Collected: 254 tests
+Result: 214 passed, 40 errors
+```
+
+Important note: the 40 errors in the latest run were setup-time `PermissionError` failures when pytest tried to create temporary directories under:
+
+```text
+C:\Users\aksha\AppData\Local\Temp\pytest-of-aksha
+```
+
+These errors affected tests that use pytest temporary fixtures such as `tmp_path`. In the same run, the Phase 3 integration and unit tests completed successfully. Because the temp-directory issue prevents the full suite from running cleanly in this environment, this README does not claim a final passing percentage.
+
+## Using the Implemented Components
+
+The top-level `ArchGuard` class in `core.py` is not yet functional. Use the phase-level modules directly for now.
+
+### Parse a PlantUML Architecture
 
 ```python
-# Phase 1: Load and validate architecture
-from archguard.phase1_symbolic_brain import PlantUMLParser, GraphBuilder
+from archguard.phase1_symbolic_brain.plantuml_parser import PlantUMLParser
+from archguard.phase1_symbolic_brain.graph_builder import GraphBuilder
 
 parser = PlantUMLParser()
-architecture = parser.parse("architecture.puml")
-graph = GraphBuilder.build_from_parsed(architecture)
+parsed = parser.parse("tests/fixtures/sample_architectures/simple_layered.puml")
 
-# Phase 2: Extract code facts
-from archguard.phase2_code_abstraction import CodeGraphBuilder, PythonExtractor
+architecture_graph = GraphBuilder.build_from_parsed(parsed)
+```
+
+### Extract a Python Implementation Graph
+
+```python
+from archguard.phase2_code_abstraction.extractors.python_extractor import PythonExtractor
+from archguard.phase2_code_abstraction.code_graph_builder import CodeGraphBuilder
 
 extractor = PythonExtractor()
-code_graph = CodeGraphBuilder.build_from_code("source_code.py", extractor)
+extraction = extractor.extract_from_file("tests/fixtures/sample_code/simple_service.py")
 
-# Phase 3: Detect violations
-from archguard.phase3_logic_engine import ConstraintChecker, TraceGenerator
-
-checker = ConstraintChecker(architecture_graph, code_graph)
-violations = checker.find_violations()
-traces = TraceGenerator.generate_json_traces(violations)
-
-# Phase 4: Get explanations
-from archguard.phase4_neuro_symbolic import GeminiClient
-
-client = GeminiClient(api_key="YOUR_API_KEY")
-explanations = client.explain_violations(traces)
+implementation_graph = CodeGraphBuilder.build_from_extracted(
+    extraction,
+    "tests/fixtures/sample_code/simple_service.py",
+)
 ```
 
-### Command Line Interface
+### Detect Violations
 
-```bash
-# Analyze a single file
-archguard analyze --architecture architecture.puml --code main.py
-
-# Analyze entire repository
-archguard analyze --architecture architecture.puml --code src/
-
-# Output to JSON file
-archguard analyze --architecture architecture.puml --code src/ --output violations.json
-
-# Include LLM explanations
-archguard analyze --architecture architecture.puml --code src/ --explain --api-key YOUR_API_KEY
-```
-
----
-
-## Development
-
-### Running Tests
-
-```bash
-# Run all tests
-pytest
-
-# Run with coverage report
-pytest --cov=src/archguard --cov-report=html
-
-# Run only unit tests
-pytest tests/unit/
-
-# Run only integration tests
-pytest tests/integration/
-
-# Run with verbose output
-pytest -v
-
-# Run a specific test file
-pytest tests/unit/test_phase1_symbolic_brain/test_plantuml_parser.py
-```
-
-### Code Quality
-
-```bash
-# Type checking
-mypy src/archguard
-
-# Linting
-pylint src/archguard
-
-# Code formatting (check)
-black --check src/archguard
-
-# Code formatting (apply)
-black src/archguard
-```
-
-### Development Workflow
-
-1. Create a feature branch: `git checkout -b feature/description`
-2. Make changes in isolation (see Week 1-7 plan)
-3. Write tests for your changes
-4. Run full test suite and code quality checks
-5. Commit with descriptive message
-6. Push and create pull request
-
----
-
-## Architecture Decisions
-
-### Why NetworkX?
-NetworkX provides mature, well-tested graph algorithms. Both architectural rules and implementation facts are naturally represented as directed graphs where nodes are classes and edges are call relationships.
-
-### Why Tree-Sitter?
-Tree-Sitter provides language-agnostic, incremental AST parsing with excellent error recovery. Unlike regex-based approaches, it handles complex syntax reliably. Its language plugins enable future extensions to Java, Go, Rust, etc.
-
-### Why Not Type Stubs or Imported Symbols?
-ArchGuard focuses on *explicit* architectural violations through *actual* method calls. Dynamic imports, reflection, and indirect invocations are out of scope initially—the goal is detecting clear violations, not runtime introspection.
-
-### Why Four Phases?
-1. **Separation of Concerns**: Each phase solves one problem cleanly
-2. **Testability**: Each phase can be tested independently with mock inputs
-3. **Extensibility**: Replace or enhance individual phases without affecting others
-4. **Interpretability**: Output of each phase serves as documentation and verification
-
----
-
-## Example
-
-### PlantUML Architecture
-```plantuml
-@startuml
-package "Presentation" {
-  class View
-}
-
-package "Business Logic" {
-  class Service
-}
-
-package "Data Access" {
-  class Repository
-}
-
-View --> Service: calls
-Service --> Repository: calls
-@enduml
-```
-
-### Violating Code
 ```python
-class View:
-    def load_data(self):
-        # VIOLATION: View should not call Repository directly!
-        repo = Repository()
-        return repo.query()
+from archguard.phase3_logic_engine.constraint_checker import ConstraintChecker
+from archguard.phase3_logic_engine.violation_detector import ViolationDetector
 
-class Service:
-    pass
+checker = ConstraintChecker(architecture_graph, implementation_graph)
+direct_violations = checker.find_violations()
 
-class Repository:
-    def query(self):
-        return data
+all_violations = ViolationDetector.detect(architecture_graph, implementation_graph)
 ```
 
-### ArchGuard Output
-```json
-{
-  "violations": [
-    {
-      "type": "DIRECT_VIOLATION",
-      "source_class": "View",
-      "target_class": "Repository",
-      "violation_path": ["View.load_data", "Repository()"],
-      "explanation": "The View layer should not directly access the Repository layer. All data access must go through the Service layer to maintain architectural separation of concerns.",
-      "suggested_fix": "Create a Service method that wraps the repository call and have View call that instead."
-    }
-  ]
-}
-```
+The exact method names may vary across phase modules as the code is still a prototype. The test files under `tests/unit/` and `tests/integration/` are currently the most reliable examples of supported usage.
 
----
+## Design Decisions
 
-## Implementation Status
+### PlantUML as the Architecture Input
 
-### Completed Phases ✅
-- **Phase 1: Symbolic Brain** ✅ **COMPLETE** (103/103 tests)
-  - PlantUML parsing with regex-based extraction
-  - Architecture graph construction with NetworkX
-  - Comprehensive test suite covering all edge cases
+ArchGuard uses PlantUML because it is text-based, version-control friendly, and easy to pair with a source repository. This lets an architecture diagram become a lightweight knowledge base.
 
-- **Phase 2: Code Abstraction** ✅ **COMPLETE** (94/94 tests)
-  - Python AST parsing and extraction
-  - Class/method/call extraction with inheritance and composition patterns
-  - Implementation graph construction with query interface
-  - Full end-to-end pipeline with realistic fixtures
+Effect on performance and implementation: the current parser uses regular expressions, which keeps the implementation simple and fast for course-sized examples. The tradeoff is that it only supports the PlantUML patterns covered by the parser and tests; it is not a complete PlantUML grammar.
 
-- **Phase 3: Logic Engine** ✅ **COMPLETE** (51/53 tests - 96% pass rate)
-  - Constraint-based violation detection (direct + transitive)
-  - Violation classification and tracing
-  - JSON and human-readable report generation
-  - Fix suggestions for violations
+### Graphs as the Shared Representation
 
-**Total Tests Passing: 246/248 (99.2%)** ✅
+Both the intended architecture and the extracted implementation are represented as directed graphs. A node represents a class or component, and an edge represents an allowed or observed dependency.
 
-### Implementation Summary
+Effect on performance and implementation: direct violation checking is simple and deterministic because the core operation is edge membership. This gives predictable behavior and makes the reasoning easy to inspect. The tradeoff is that the quality of the result depends heavily on how accurately the architecture and implementation graphs are built.
 
-#### Phase 1: Symbolic Brain (103 tests) ✅
-- PlantUML Parser: Regex-based extraction of layers, classes, edges
-- Graph Builder: Converts parsed architecture to NetworkX DiGraph
-- Models: Layer, ArchitectureClass, ArchitectureEdge, ArchitectureGraph
+### Python `ast` Instead of Tree-Sitter in the Current Code
 
-#### Phase 2: Code Abstraction (94 tests) ✅
-- TreeSitterWrapper: Python AST parsing using ast module
-- ASTWalker: Class/method/call extraction with dependency tracking
-- PythonExtractor: High-level extraction interface
-- CodeGraphBuilder: Converts extracted facts to typed ImplementationGraph
-- Models: ClassDefinition, MethodCall, ImplementationGraph
+The repository includes `tree-sitter` as a dependency, but the current parser wrapper uses Python's built-in `ast` module for Python source code.
 
-#### Phase 3: Logic Engine (51/53 tests) ✅
+Effect on performance and implementation: `ast` avoids extra parser setup and is enough for Python-only experiments. The tradeoff is that Java, TypeScript, Go, and other languages are not currently supported, and the system cannot claim language-agnostic parsing yet.
 
-**Core Components**:
-- ConstraintChecker: Violation detection logic (direct + transitive)
-- ViolationDetector: High-level interface with violation classification
-- TraceGenerator: JSON export, human-readable reports, fix suggestions
-- Models: Violation (frozen for hashability), ViolationTrace, ViolationReport
+### Deterministic Symbolic Detection Before Neural Explanation
 
-**Key Features**:
-- Direct violation detection: Calls not in architecture graph
-- Transitive violation detection: Multi-hop paths not allowed
-- Violation classification by type (DIRECT_VIOLATION, TRANSITIVE_VIOLATION)
-- Severity levels (high, medium, low)
-- Call trace generation with paths
-- Automated fix suggestions
+The intended architecture is that symbolic code detects violations first, and an LLM explains already-detected violations afterward.
 
-### Current Status
-- **Phases 1-3: IMPLEMENTATION COMPLETE** ✅
-- **Test Coverage**: 246/248 tests passing (99.2%)
-- **Code Quality**: Type hints, docstrings, modular architecture
+Effect on performance and implementation: Phase 3 is deterministic and does not depend on API latency. Phase 4 would add developer-friendly explanations, but it is not currently implemented, so the repository should not claim working LLM explanations.
 
-### Roadmap
+### Modular Phases
 
-#### Completed (Weeks 1-3) ✅
-- ✅ Phase 1: Symbolic Brain (complete)
-- ✅ Phase 2: Code Abstraction (complete)
-- ✅ Phase 3: Logic Engine (complete)
+The project is split into four phases so each phase can be developed and tested separately.
 
-#### Upcoming (Weeks 4-5)
-- Phase 4: Neuro-Symbolic Integration (LLM explanations via Gemini)
-- Integration & orchestration via core.py
+Effect on performance and implementation: this made the test suite easier to organize and made Phase 3 independently usable. The tradeoff is that the project currently lacks a completed orchestrator that connects all phases into one user-facing workflow.
 
-### Future Phases (Post-Week 7)
-- Java code extraction support
-- Additional language support (Go, Rust, TypeScript)
-- Transitive dependency analysis
-- Performance optimization for large codebases
-- IDE plugin integration (VS Code, IntelliJ)
-- Dashboard for violation visualization
-- Integration with CI/CD pipelines
+## Known Limitations
 
----
-
-## Contributing
-
-ArchGuard is a graduate-level project developed as part of an AI class. We welcome contributions that:
-- Improve code clarity and maintainability
-- Expand language support
-- Enhance test coverage
-- Improve documentation
-- Add more sophisticated violation analysis
-
-Please ensure all changes include:
-- Corresponding unit tests
-- Type hints throughout
-- Clear commit messages
-- Updated documentation
-
----
-
-## Performance Considerations
-
-- **Small Codebases** (<10K LOC): < 1 second per phase
-- **Medium Codebases** (10K-100K LOC): 1-5 seconds per phase
-- **Large Codebases** (>100K LOC): Scales linearly with code size; consider batch processing
-
-Parsing is the fastest phase, constraint checking is deterministic O(E), LLM queries are the bottleneck (external API calls).
-
----
-
-## Limitations
-
-This implementation has intentional scope boundaries:
-
-- ❌ Does not detect runtime violations or reflection-based calls
-- ❌ Does not analyze indirect dependencies through configuration files
-- ❌ Does not handle dynamic code generation
-- ❌ Cannot reason about architectural intent beyond the PlantUML specification
-- ❌ Requires explicit, well-formed PlantUML and source code
-
-These limitations are by design—ArchGuard aims for *precision* and *interpretability*, not exhaustive coverage.
-
----
+- The top-level pipeline in `core.py` is incomplete.
+- The command-line examples from earlier project drafts are not currently supported as installed commands.
+- Phase 4 is a scaffold, not a working Gemini integration.
+- The system only analyzes explicit Python call relationships that the AST extractor can see.
+- It does not analyze runtime dispatch, reflection, dependency injection containers, configuration-driven calls, dynamic imports, or generated code.
+- The PlantUML parser supports a limited subset of PlantUML syntax.
+- The current evaluation is based on small test fixtures, not production-sized repositories.
+- The repository has empty `docs/` and `examples/` directories at the time of this README update.
+- Current test results are affected by a local pytest temporary-directory permission issue.
 
 ## Academic Context
 
-ArchGuard is an implementation project for a graduate-level AI course. It demonstrates:
-- **Symbolic AI**: Graph-based constraint satisfaction and reasoning
-- **Neuro-Symbolic Integration**: Combining deterministic logic with neural language models
-- **Software Engineering**: Modular design, comprehensive testing, clean architecture
-- **Domain-Specific Problem Solving**: Applying AI techniques to real software engineering challenges
+ArchGuard was developed for a knowledge-based AI course project. The project demonstrates:
 
----
+- Knowledge representation through architecture graphs.
+- Constraint checking over symbolic graph structures.
+- The intended neuro-symbolic pattern of symbolic detection followed by neural explanation.
+- Practical lessons about where deterministic methods are useful in AI-assisted software engineering workflows.
 
-## License
+## Code Authorship and External Code
 
-[To be determined—typically MIT or GPL for academic work]
+The project code in `src/archguard` and `tests` is project implementation code. External code is used through normal Python package dependencies, including NetworkX, pytest, and Google Generative AI client libraries. No third-party source files are intentionally vendored into this repository.
 
----
+## Disclaimer About Claims, Assumptions, and Missing Work
 
-## Authors & Credits
+This repository should be described as a prototype, not a production-ready tool. The central assumption is that the intended architecture can be represented as a reasonably complete PlantUML dependency graph, and that architectural drift can be detected by comparing explicit implementation edges against that graph. If the specification is incomplete, outdated, or too abstract, ArchGuard may report misleading violations or miss real design problems.
 
-**Primary Implementation**: Graduate AI Class Project, Spring 2025-2026
+The current implementation also assumes Python source code and mostly explicit call relationships. It does not yet address dynamic language behavior, large repositories, multi-language projects, framework-specific dependency injection, or real developer studies of whether explanations improve comprehension. Claims about scalability, false positives, and usefulness should therefore be limited to the tested fixture setting unless additional experiments are added.
 
-**Conceptual Inspiration**: Neuro-symbolic AI, architectural patterns, and software quality assurance literature
-
----
-
-## Questions or Issues?
-
-- 📖 Read the documentation in `/docs`
-- 🧪 Check test examples in `/tests/fixtures`
-- 📧 For questions or issues, please refer to project guidelines
-
----
-
-**⭐ Built with architectural integrity and AI reasoning**
+The intended LLM explanation layer is not complete in this codebase. Any project paper or presentation should clearly distinguish implemented symbolic detection from planned or scaffolded Gemini-based explanation.

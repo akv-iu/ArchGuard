@@ -124,8 +124,11 @@ class TestConstraintChecker:
         assert checker._is_call_allowed("A", "B") is False
 
     def test_is_call_allowed_transitive_path(self):
-        """Test checking if a call is allowed via transitive path."""
-        # Create architecture: A → B → C
+        """Test that a transitive architecture path does NOT make a direct call allowed.
+
+        Arch has A→B→C but no direct A→C edge. A calling C directly is a layer
+        bypass and must be flagged, not silently approved via has_path.
+        """
         arch_graph = ArchitectureGraph()
         arch_graph.add_class(ArchitectureClass("A", "layer1"))
         arch_graph.add_class(ArchitectureClass("B", "layer2"))
@@ -136,8 +139,74 @@ class TestConstraintChecker:
         code_graph = ImplementationGraph()
         checker = ConstraintChecker(arch_graph, code_graph)
 
-        # Transitive path A → B → C should be allowed
-        assert checker._is_call_allowed("A", "C") is True
+        # Only a direct arch edge constitutes permission — transitive path does not
+        assert checker._is_call_allowed("A", "C") is False
+
+    def test_layer_bypass_is_direct_violation(self):
+        """Test that a layer-bypass call is detected as a DIRECT_VIOLATION.
+
+        Architecture: View → Service → Repository (no View→Repository edge).
+        Code: View calls Repository directly.
+        Expected: DIRECT_VIOLATION reported for (View, Repository).
+        """
+        arch_graph = ArchitectureGraph()
+        arch_graph.add_class(ArchitectureClass("View", "ui"))
+        arch_graph.add_class(ArchitectureClass("Service", "service"))
+        arch_graph.add_class(ArchitectureClass("Repository", "data"))
+        arch_graph.add_edge(ArchitectureEdge("View", "Service", "calls"))
+        arch_graph.add_edge(ArchitectureEdge("Service", "Repository", "calls"))
+
+        code_graph = ImplementationGraph()
+        code_graph.add_class(ClassDefinition("View", "view.py", 1))
+        code_graph.add_class(ClassDefinition("Repository", "repo.py", 5))
+        code_graph.add_call(MethodCall(
+            source_class="View",
+            target_class="Repository",
+            source_method="render",
+            target_method="find_all",
+        ))
+
+        checker = ConstraintChecker(arch_graph, code_graph)
+        violations = checker.find_violations()
+
+        assert len(violations) == 1
+        v = list(violations)[0]
+        assert v.type == "DIRECT_VIOLATION"
+        assert v.source_class == "View"
+        assert v.target_class == "Repository"
+
+    def test_find_circular_violations_detected(self):
+        """Test that a circular dependency in code is detected."""
+        arch_graph = ArchitectureGraph()
+        arch_graph.add_class(ArchitectureClass("A", "layer1"))
+        arch_graph.add_class(ArchitectureClass("B", "layer2"))
+
+        code_graph = ImplementationGraph()
+        code_graph.add_class(ClassDefinition("A", "a.py", 1))
+        code_graph.add_class(ClassDefinition("B", "b.py", 1))
+        # A → B → A forms a cycle
+        code_graph.add_call(MethodCall(source_class="A", target_class="B", source_method="m1", target_method="m2"))
+        code_graph.add_call(MethodCall(source_class="B", target_class="A", source_method="m2", target_method="m1"))
+
+        checker = ConstraintChecker(arch_graph, code_graph)
+        violations = checker.find_circular_violations()
+
+        assert len(violations) > 0
+        assert all(v.type == "CIRCULAR_DEPENDENCY" for v in violations)
+        assert all(v.severity == "critical" for v in violations)
+
+    def test_find_circular_violations_none(self):
+        """Test that an acyclic code graph produces no circular violations."""
+        arch_graph = ArchitectureGraph()
+        code_graph = ImplementationGraph()
+        code_graph.add_class(ClassDefinition("A", "a.py", 1))
+        code_graph.add_class(ClassDefinition("B", "b.py", 1))
+        code_graph.add_call(MethodCall(source_class="A", target_class="B", source_method="m1", target_method="m2"))
+
+        checker = ConstraintChecker(arch_graph, code_graph)
+        violations = checker.find_circular_violations()
+
+        assert len(violations) == 0
 
     def test_find_transitive_violations(self):
         """Test detecting transitive violations."""

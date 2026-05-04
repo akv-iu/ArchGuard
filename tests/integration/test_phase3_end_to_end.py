@@ -142,9 +142,9 @@ class UserController:
             code_graph.add_class(ClassDefinition(cls, "app.py", 0))
 
         # Follow architecture
-        code_graph.add_call(MethodCall(source_class="UI", source_method="Controller", target_class="m1", target_method="m2"))
-        code_graph.add_call(MethodCall(source_class="Controller", source_method="Service", target_class="m2", target_method="m3"))
-        code_graph.add_call(MethodCall(source_class="Service", source_method="Repository", target_class="m3", target_method="m4"))
+        code_graph.add_call(MethodCall(source_class="UI", target_class="Controller", source_method="m1", target_method="m2"))
+        code_graph.add_call(MethodCall(source_class="Controller", target_class="Service", source_method="m2", target_method="m3"))
+        code_graph.add_call(MethodCall(source_class="Service", target_class="Repository", source_method="m3", target_method="m4"))
 
         violations = ViolationDetector.detect(arch_graph, code_graph)
 
